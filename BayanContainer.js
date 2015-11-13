@@ -13,16 +13,18 @@ require(
 	"dojo/topic", // publish
 	"dojo/dom-attr",
 	"dojo/dom-style",
+	"dojo/_base/fx", // fx.Animation
     ],
-    function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle) {
+    function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle, fx) {
 	declare("BayanContainer", AccordionContainer, {
 	    baseClass: "dijitAccordionContainer",
 	    
 	    childrenHeight: [ ],
+	    childrenOldHeight: [ ],
 	    
 	    selectedChildren: [ ],
 	    
-	    childAnimation: [ ],
+	    childrenAnimation: [ ],
 	    
 	    constructor: function() {
 		console.log("BayanContainer costructor running");
@@ -126,49 +128,90 @@ animate = false;
 		if ( animate ) {
 			// USE ANIMATION
 			// First of all, stop all active animations.
-			Array.forEach(this.childAnimation, function(animation, index) {
+			Array.forEach(this.childrenAnimation, function(animation, index) {
 				if ( typeof animation == 'object' ) {
 					animation.stop(true);
-					delete this.childAnimation[index];
+					delete this.childrenAnimation[index];
 				}
 			}, this);
+			
+			var self = this;
 
 			// Resize all children
 			Array.forEach(this.getChildren(), function(child, childIndex) {
-				var newContents = child._wrapperWidget.containerNode,
-				    oldHeight = newContents.style.heigth;
-				alert("Children #"+childIndex+", height="+oldHeight);
-//				var h = this.childrenHeight[childIndex];
-//				if ( h )
-//					child.resize( { w: this._width, h: h } );
+				var newContents = child._wrapperWidget.containerNode;
+				var h = this.childrenHeight[childIndex];
+				
+				
+				this.duration = 10000;
+				
+				if ( action == "show" && child == newWidget ) {
+				console.log("Make show transition for child "+child);
+					this.childrenAnimation[childIndex] = new fx.Animation({
+						node: newContents,
+						duration: this.duration,
+						curve: [ 1, this.childrenHeight[childIndex] ],
+						onAnimate: function(value){
+							value = Math.floor(value);	// avoid fractional values
+							newContents.style.height = value + "px";
+						},
+						onEnd: function(){
+							delete self._animation;
+//							newContents.style.height = "auto";
+							child.resize( { w: this._width, h: self.childrenHeight[childIndex] } );
+						}
+					});
+				console.log("Curve from "+1+" till "+this.childrenHeight[childIndex]);
+					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
+					this.childrenAnimation[childIndex].play();
+					this.childrenOldHeight[childIndex] = this.childrenHeight[childIndex];
+					newWidget._wrapperWidget.set("selected", true);
+					this._showChild(newWidget);
+				}
+				else if ( action == "hide" && child == newWidget ) {
+				console.log("Make hide transition for child "+child);
+					this.childrenAnimation[childIndex] = new fx.Animation({
+						node: newContents,
+						duration: this.duration,
+						curve: [ this.childrenOldHeight[childIndex], 1 ],
+						onAnimate: function(value){
+							value = Math.floor(value);	// avoid fractional values
+							newContents.style.height = value + "px";
+						},
+						onEnd: function(){
+							delete self._animation;
+//							newContents.style.height = "auto";
+							self._hideChild(newWidget);
+						}
+					});
+					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
+					this.childrenAnimation[childIndex].play();
+					this.childrenOldHeight[childIndex] = 0;
+					newWidget._wrapperWidget.set("selected", false);
+				}
+				else if ( h > 0 ) {
+				console.log("Make resize transition for child "+child);
+					this.childrenAnimation[childIndex] = new fx.Animation({
+						node: newContents,
+						duration: this.duration,
+						curve: [ this.childrenOldHeight[childIndex], this.childrenHeight[childIndex] ],
+						onAnimate: function(value){
+							value = Math.floor(value);	// avoid fractional values
+							newContents.style.height = value + "px";
+						},
+						onEnd: function(){
+							delete self._animation;
+							newContents.style.height = "auto";
+							child.resize( { w: this._width, h: self.childrenHeight[childIndex] } );
+
+						}
+					});
+				console.log("Curve from "+this.childrenOldHeight[childIndex]+" till "+this.childrenHeight[childIndex]);
+					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
+					this.childrenAnimation[childIndex].play();
+					this.childrenOldHeight[childIndex] = this.childrenHeight[childIndex];
+				}
 			}, this);
-
-/*
-		    this._animation = new fx.Animation({
-			node: newContents,
-			duration: this.duration,
-			curve: [1, this._verticalSpace - animationHeightOverhead - 1],
-			onAnimate: function(value){
-			    value = Math.floor(value);	// avoid fractional values
-			    newContents.style.height = value + "px";
-			    oldContents.style.height = (self._verticalSpace - animationHeightOverhead - value) + "px";
-			},
-			onEnd: function(){
-			    delete self._animation;
-			    newContents.style.height = "auto";
-			    oldWidget._wrapperWidget.containerNode.style.display = "none";
-			    oldContents.style.height = "auto";
-			    self._hideChild(oldWidget);
-			}
-		    });
-		    this._animation.onStop = this._animation.onEnd;
-		    this._animation.play();
-*/
-
-
-
-
-
 
 		}
 		else {
@@ -191,6 +234,8 @@ animate = false;
 				if ( h )
 					child.resize( { w: this._width, h: h } );
 			}, this);
+			
+			this.childrenOldHeight = this.childrenHeight;
 		}
 /*
 		var self = this;
@@ -262,84 +307,6 @@ animate = false;
 
 	    },
 
-//	    _transition: function(/*dijit/_WidgetBase?*/ newWidget, /*dijit/_WidgetBase?*/ oldWidget, /*Boolean*/ animate){
-/*
-		console.log("_transition:"+newWidget+":"+oldWidget+":"+animate);
-		return this.inherited(arguments);
-		
-		if(has("ie") < 8){
-		    animate = false;
-		}
-
-		if(this._animation){
-		    // there's an in-progress animation.  speedily end it so we can do the newly requested one
-		    this._animation.stop(true);
-		    delete this._animation;
-		}
-
-		var self = this;
-
-		if(newWidget){
-		    newWidget._wrapperWidget.set("selected", true);
-
-		    var d = this._showChild(newWidget);	// prepare widget to be slid in
-
-		    // Size the new widget, in case this is the first time it's being shown,
-		    // or I have been resized since the last time it was shown.
-		    // Note that page must be visible for resizing to work.
-		    if(this.doLayout && newWidget.resize){
-			newWidget.resize(this._containerContentBox);
-		    }
-		}
-
-		if(oldWidget){
-		    oldWidget._wrapperWidget.set("selected", false);
-		    if(!animate){
-			this._hideChild(oldWidget);
-		    }
-		}
-
-		if(animate){
-		    var newContents = newWidget._wrapperWidget.containerNode,
-		    oldContents = oldWidget._wrapperWidget.containerNode;
-
-		    // During the animation we will be showing two dijitAccordionChildWrapper nodes at once,
-		    // which on claro takes up 4px extra space (compared to stable AccordionContainer).
-		    // Have to compensate for that by immediately shrinking the pane being closed.
-		    var wrapperContainerNode = newWidget._wrapperWidget.containerNode,
-			wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
-			wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode),
-			animationHeightOverhead = wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h;
-
-		    oldContents.style.height = (self._verticalSpace - animationHeightOverhead) + "px";
-
-		    this._animation = new fx.Animation({
-			node: newContents,
-			duration: this.duration,
-			curve: [1, this._verticalSpace - animationHeightOverhead - 1],
-			onAnimate: function(value){
-			    value = Math.floor(value);	// avoid fractional values
-			    newContents.style.height = value + "px";
-			    oldContents.style.height = (self._verticalSpace - animationHeightOverhead - value) + "px";
-			},
-			onEnd: function(){
-			    delete self._animation;
-			    newContents.style.height = "auto";
-			    oldWidget._wrapperWidget.containerNode.style.display = "none";
-			    oldContents.style.height = "auto";
-			    self._hideChild(oldWidget);
-			}
-		    });
-		    this._animation.onStop = this._animation.onEnd;
-		    this._animation.play();
-		}
-
-		return d;	// If child has an href, promise that fires when the widget has finished loading
-	    },
-*/
-	    
-	    
-	    
 	});
     }
 );
