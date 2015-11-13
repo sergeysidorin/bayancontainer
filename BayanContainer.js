@@ -30,67 +30,8 @@ require(
 	    },
 	    
 	    
-	    _remakeSize: function() {
-		// get cumulative height of all the unselected title bars
-		var totalCollapsedHeight = 0;
-		var totalOpenButtonHeight = 0;
-		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
-		console.log("layout: selectedChildrenId="+selectedChildrenId);
-		var mySize = this._contentBox;
-		
-		array.forEach(this.getChildren(), function(child, index, array){
-			var i = dojo.indexOf(selectedChildrenId, child.id);
-			console.log("index for "+child.id+" is "+i);
-			if( i == -1 ){
-				console.log("layout: collapsed child "+child);
-				totalCollapsedHeight += domGeometry.getMarginSize(child._wrapperWidget.domNode).h;
-			}
-			else {
-				console.log("layout: open child "+child);
-				var wrapperDomNode = child._wrapperWidget.domNode;
-				var wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode);
-				var wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode);
-				var wrapperContainerNode = child._wrapperWidget.containerNode;
-				var wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode);
-				var wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
-
-				totalOpenButtonHeight += wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
-
-				if ( this._width == 0 )
-					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
-			}
-		}, this);
-
-		var verticalSpace = mySize.h - totalCollapsedHeight - totalOpenButtonHeight;
-
-		var numOpen = this.selectedChildren.length;
-		array.forEach(this.getChildren(), function(child, childIndex, array){
-			var i = dojo.indexOf(selectedChildrenId, child.id);
-			if( i == -1 ){
-//				domAttr.remove(child, "newHeight");
-				domAttr.set(child, "newHeight", 0);
-			}
-			else {
-				var h = Math.floor(verticalSpace / numOpen + 0.5);
-			alert("Set newHeight = "+h+" for child #"+childIndex);
-				domAttr.set(child, "newHeight", h);
-				domStyle.set(child, "newHeight", h);
-				verticalSpace -= h;
-				numOpen --;
-
-
-			var h = domAttr.get(child, "newHeight");
-			var h = domStyle.get(child, "newHeight");
-			alert("Check newHeight = "+h+" for child #"+childIndex);
-			}
-			
-		}, this);
-		
-	    },
-	    
-	    
 	    _getSize: function() {
-		// get cumulative height of all the unselected title bars
+		// get cumulative height of all the (selected and unselected) title bars
 		var totalButtonHeight = 0;
 		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
 		var mySize = this._contentBox;
@@ -99,8 +40,6 @@ require(
 		
 		array.forEach(this.getChildren(), function(child, index, array){
 			var i = dojo.indexOf(selectedChildrenId, child.id);
-//			console.log("getSize: index for "+child.id+" is "+i);
-			
 			var wrapperDomNode = child._wrapperWidget.domNode,
 				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
 				wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode),
@@ -111,11 +50,9 @@ require(
 			totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
 
 			if( i == -1 ){
-//				console.log("getSize: collapsed child "+child);
 				result.push(0);
 			}
 			else {
-//				console.log("getSize: open child "+child);
 				result.push(1);
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
@@ -134,17 +71,6 @@ require(
 			}
 		}
 		return result;
-	    },
-	    
-	    
-	    _resize: function() {
-		this._remakeSize();
-		array.forEach(this.getChildren(), function(child, childIndex) {
-			var h = domAttr.get(child, "newHeight");
-			alert("Got newHeight = "+h+" for child #"+childIndex);
-			if ( h )
-				child.resize( { w: this._width, h: h } );
-		}, this);
 	    },
 	    
 	    
