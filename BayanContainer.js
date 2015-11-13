@@ -11,14 +11,16 @@ require(
 	'dojo/dom-geometry',
 	'dojo/_base/json',
 	"dojo/topic", // publish
+	"dojo/dom-attr",
+	"dojo/dom-style",
     ],
-    function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic) {
+    function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle) {
 	declare("BayanContainer", AccordionContainer, {
 	    baseClass: "dijitBayanContainer",
 	    
-	    selectedChildren: [ ],
+	    childrenHeight: [ ],
 	    
-	    childHeight: [ ],
+	    selectedChildren: [ ],
 	    
 	    childAnimation: [ ],
 	    
@@ -36,14 +38,12 @@ require(
 		console.log("layout: selectedChildrenId="+selectedChildrenId);
 		var mySize = this._contentBox;
 		
-		this.childHeight = new Array();
 		array.forEach(this.getChildren(), function(child, index, array){
 			var i = dojo.indexOf(selectedChildrenId, child.id);
 			console.log("index for "+child.id+" is "+i);
 			if( i == -1 ){
 				console.log("layout: collapsed child "+child);
 				totalCollapsedHeight += domGeometry.getMarginSize(child._wrapperWidget.domNode).h;
-				this.childHeight.push(0);
 			}
 			else {
 				console.log("layout: open child "+child);
@@ -58,37 +58,103 @@ require(
 
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
-				
-				this.childHeight.push(1);
 			}
 		}, this);
 
 		var verticalSpace = mySize.h - totalCollapsedHeight - totalOpenButtonHeight;
 
-		// Memo size to make displayed child
 		var numOpen = this.selectedChildren.length;
+		array.forEach(this.getChildren(), function(child, childIndex, array){
+			var i = dojo.indexOf(selectedChildrenId, child.id);
+			if( i == -1 ){
+//				domAttr.remove(child, "newHeight");
+				domAttr.set(child, "newHeight", 0);
+			}
+			else {
+				var h = Math.floor(verticalSpace / numOpen + 0.5);
+			alert("Set newHeight = "+h+" for child #"+childIndex);
+				domAttr.set(child, "newHeight", h);
+				domStyle.set(child, "newHeight", h);
+				verticalSpace -= h;
+				numOpen --;
+
+
+			var h = domAttr.get(child, "newHeight");
+			var h = domStyle.get(child, "newHeight");
+			alert("Check newHeight = "+h+" for child #"+childIndex);
+			}
+			
+		}, this);
 		
-		for(var i = 0; i < this.childHeight.length; i ++ )
-			if ( this.childHeight[i] == 1 ) {
-				this.childHeight[i] = Math.floor(verticalSpace / numOpen + 0.5);
-				verticalSpace -= this.childHeight[i];
+	    },
+	    
+	    
+	    _getSize: function() {
+		// get cumulative height of all the unselected title bars
+		var totalCollapsedHeight = 0;
+		var totalOpenButtonHeight = 0;
+		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
+		var mySize = this._contentBox;
+		
+		var result = [];
+		
+		array.forEach(this.getChildren(), function(child, index, array){
+			var i = dojo.indexOf(selectedChildrenId, child.id);
+			console.log("getSize: index for "+child.id+" is "+i);
+			if( i == -1 ){
+				console.log("getSize: collapsed child "+child);
+				totalCollapsedHeight += domGeometry.getMarginSize(child._wrapperWidget.domNode).h;
+				result.push(0);
+			}
+			else {
+				console.log("getSize: open child "+child);
+				var wrapperDomNode = child._wrapperWidget.domNode;
+				var wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode);
+				var wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode);
+				var wrapperContainerNode = child._wrapperWidget.containerNode;
+				var wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode);
+				var wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
+
+				totalOpenButtonHeight += wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+
+				result.push(1);
+				
+				if ( this._width == 0 )
+					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
+			}
+		}, this);
+
+		var verticalSpace = mySize.h - totalCollapsedHeight - totalOpenButtonHeight;
+
+		var numOpen = this.selectedChildren.length;
+		console.log("getSize: total number of selected = "+numOpen+", verticalSpace="+verticalSpace+", tCH="+totalCollapsedHeight+", tOBH="+totalOpenButtonHeight);
+		for (var i=0; i<result.length; i ++ ){
+			if ( result[i] == 1 ) {
+				var h = Math.floor(verticalSpace / numOpen + 0.5);
+				result[i] = h;
+				verticalSpace -= h;
 				numOpen --;
 			}
+		}
+		return result;
 	    },
 	    
 	    
 	    _resize: function() {
 		this._remakeSize();
 		array.forEach(this.getChildren(), function(child, childIndex) {
-			if ( this.childHeight[childIndex] > 0 )
-				child.resize( { w: this._width, h: this.childHeight[childIndex] } );
+			var h = domAttr.get(child, "newHeight");
+			alert("Got newHeight = "+h+" for child #"+childIndex);
+			if ( h )
+				child.resize( { w: this._width, h: h } );
 		}, this);
 	    },
 	    
 	    
 	    layout: function() {
-		this._resize();
+		this._transition(this.getChildren()[0], "show", false);
 	    },
+	
 	    
 	    addChild: function(child, insertIndex) {
 		console.log("addChild:"+child+":"+insertIndex);
@@ -98,44 +164,120 @@ require(
 		}
 		return this.inherited(arguments);
 	    },
+	
 	    
 	    selectChild: function(newWidget, animate) {
-		var index = dojo.indexOf(this.selectedChildren, newWidget);
-		if ( index == -1 ) {
+		var childIndex = dojo.indexOf(this.getChildren(), newWidget);
+		var selectedIndex = dojo.indexOf(this.selectedChildren, newWidget);
+		var action = "";
+		if ( selectedIndex == -1 ) {
 		    this.selectedChildren.push(newWidget);
 		    topic.publish(this.id + "-selectChild", newWidget);	// publish
-//		    this._transition(newWidget, 1, animate);
-		    this._showChild(newWidget);
-		    this._resize();
+		    action = "show";
+		    this._transition(newWidget, action, animate);
 		}
 		else {
 		    if ( this.selectedChildren.length == 1 ) {
 		    }
 		    else {
-			this.selectedChildren.splice(index, 1);
-//			this._transition(newWidget, 0, animate);
-			this._hideChild(newWidget);
-			this._resize();
+			this.selectedChildren.splice(selectedIndex, 1);
+			action = "hide";
+			this._transition(newWidget, action, animate);
 		    }
 		}
 	    },
 
-	    _transition: function(newWidget, mode, animate){
-		var sizes = this._getSize();
-
-		console.log("_new transition!");
-		if(has("ie") < 8){
+	    _transition: function(newWidget, action, animate){
+		console.log("_new transition! "+newWidget+" / "+action);
+		if ( action == "" )
+		    return;
+		
+		if(has("ie") < 8)
 		    animate = false;
+
+animate = false;
+		// Recalculate height for all children. Height for hidden child = 0, for visible child > 0.
+		this.childrenHeight = this._getSize();
+
+
+		if ( animate ) {
+			// USE ANIMATION
+			// First of all, stop all active animations.
+			Array.forEach(this.childAnimation, function(animation, index) {
+				if ( typeof animation == 'object' ) {
+					animation.stop(true);
+					delete this.childAnimation[index];
+				}
+			}, this);
+
+			// Resize all children
+			Array.forEach(this.getChildren(), function(child, childIndex) {
+				var newContents = child._wrapperWidget.containerNode,
+				    oldHeight = newContents.style.heigth;
+				alert("Children #"+childIndex+", height="+oldHeight);
+//				var h = this.childrenHeight[childIndex];
+//				if ( h )
+//					child.resize( { w: this._width, h: h } );
+			}, this);
+
+/*
+		    this._animation = new fx.Animation({
+			node: newContents,
+			duration: this.duration,
+			curve: [1, this._verticalSpace - animationHeightOverhead - 1],
+			onAnimate: function(value){
+			    value = Math.floor(value);	// avoid fractional values
+			    newContents.style.height = value + "px";
+			    oldContents.style.height = (self._verticalSpace - animationHeightOverhead - value) + "px";
+			},
+			onEnd: function(){
+			    delete self._animation;
+			    newContents.style.height = "auto";
+			    oldWidget._wrapperWidget.containerNode.style.display = "none";
+			    oldContents.style.height = "auto";
+			    self._hideChild(oldWidget);
+			}
+		    });
+		    this._animation.onStop = this._animation.onEnd;
+		    this._animation.play();
+*/
+
+
+
+
+
+
 		}
+		else {
+			// NO ANIMATION
+			if ( action == "hide" ) {
+				console.log("no animate transition: hide child "+newWidget);
+				newWidget._wrapperWidget.set("selected", false);
+				this._hideChild(newWidget);
+			}
+			if ( action == "show" ) {
+				console.log("no animate transition: show child "+newWidget);
+				newWidget._wrapperWidget.set("selected", true);
+				this._showChild(newWidget);
+			}
 
-		Array.forEach(this.childAnimation, function(animation, index) {
-		    if ( typeof animation == 'object' ) {
-			animation.stop(true);
-			delete this.childAnimation[index];
-		    }
-		}, this);
-
+			// Resize all children
+			Array.forEach(this.getChildren(), function(child, childIndex) {
+				var h = this.childrenHeight[childIndex];
+				console.log("no animate transition: child #"+childIndex+" height = "+h+", child="+child);
+				if ( h )
+					child.resize( { w: this._width, h: h } );
+			}, this);
+		}
+/*
 		var self = this;
+		
+		var children = this.getChildren();
+
+		Array.foreach(newSizes, function(height, index) {
+			if ( height == 0 ) {
+			}
+		}, this);
 		
 		if ( mode == 1 ) {
 		    newWidget._wrapperWidget.set("selected", true);
@@ -191,8 +333,9 @@ require(
 		    this._animation.onStop = this._animation.onEnd;
 		    this._animation.play();
 		}
-
-		return d;	// If child has an href, promise that fires when the widget has finished loading
+*/
+		return;
+//		return d;	// If child has an href, promise that fires when the widget has finished loading
 
 	    },
 
