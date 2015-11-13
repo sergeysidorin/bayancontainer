@@ -120,7 +120,7 @@ require(
 		if(has("ie") < 8)
 		    animate = false;
 
-animate = false;
+//animate = false;
 		// Recalculate height for all children. Height for hidden child = 0, for visible child > 0.
 		this.childrenHeight = this._getSize();
 
