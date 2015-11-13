@@ -32,7 +32,7 @@ require(
 	    },
 	    
 	    
-	    _getSize: function() {
+	    _getSize: function(newWidget, action) {
 		// get cumulative height of all the (selected and unselected) title bars
 		var totalButtonHeight = 0;
 		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
@@ -48,16 +48,12 @@ require(
 				wrapperContainerNode = child._wrapperWidget.containerNode,
 				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
 				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
-
-
-			if( i == -1 ){
-				result.push(0);
-//				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+			result.push( (i == -1)?0:1 );
+			if ( i == -1 && !(action == "show" && child==newWidget) ){
 				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + child._buttonWidget.getTitleHeight();
 			}
 			else {
 				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
-				result.push(1);
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
 			}
@@ -122,102 +118,72 @@ require(
 		if(has("ie") < 8)
 		    animate = false;
 
-animate = false;
+//animate = false;
 		// Recalculate height for all children. Height for hidden child = 0, for visible child > 0.
-		this.childrenHeight = this._getSize();
 
 
 		if ( animate ) {
 			// USE ANIMATION
 			// First of all, stop all active animations.
-			Array.forEach(this.childrenAnimation, function(animation, index) {
-				if ( typeof animation == 'object' ) {
-					animation.stop(true);
-					delete this.childrenAnimation[index];
-				}
-			}, this);
+			if ( this._animation ) {
+				this._animation.stop(true);
+				delete this._animation;
+			}
+			if ( action == "show" )
+				this.childrenOldHeight = this._getSize(newWidget, action);
+			this.childrenHeight = this._getSize();
 			
 			var self = this;
-
-			// Resize all children
-			Array.forEach(this.getChildren(), function(child, childIndex) {
-				var newContents = child._wrapperWidget.containerNode;
-				var h = this.childrenHeight[childIndex];
-				
-				
-				this.duration = 10000;
-				
-				if ( action == "show" && child == newWidget ) {
-				console.log("Make show transition for child "+child);
-					this.childrenAnimation[childIndex] = new fx.Animation({
-						node: newContents,
-						duration: this.duration,
-						curve: [ 1, this.childrenHeight[childIndex] ],
-						onAnimate: function(value){
-							value = Math.floor(value+0.5);	// avoid fractional values
-							newContents.style.height = value + "px";
-						},
-						onEnd: function(){
-							delete self._animation;
-//							newContents.style.height = "auto";
-							child.resize( { w: this._width, h: self.childrenHeight[childIndex] } );
-						}
-					});
-				console.log("Curve from "+1+" till "+this.childrenHeight[childIndex]);
-					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
-					this.childrenAnimation[childIndex].play();
-					this.childrenOldHeight[childIndex] = this.childrenHeight[childIndex];
-					newWidget._wrapperWidget.set("selected", true);
-					this._showChild(newWidget);
-				}
-				else if ( action == "hide" && child == newWidget ) {
-				console.log("Make hide transition for child "+child);
-					this.childrenAnimation[childIndex] = new fx.Animation({
-						node: newContents,
-						duration: this.duration,
-						curve: [ this.childrenOldHeight[childIndex], 1 ],
-						onAnimate: function(value){
-							value = Math.floor(value+0.5);	// avoid fractional values
-							newContents.style.height = value + "px";
-						},
-						onEnd: function(){
-							delete self._animation;
-//							newContents.style.height = "auto";
-							self._hideChild(newWidget);
-						}
-					});
-					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
-					this.childrenAnimation[childIndex].play();
-					this.childrenOldHeight[childIndex] = 0;
-					newWidget._wrapperWidget.set("selected", false);
-				}
-				else if ( h > 0 ) {
-				console.log("Make resize transition for child "+child);
-					this.childrenAnimation[childIndex] = new fx.Animation({
-						node: newContents,
-						duration: this.duration,
-						curve: [ this.childrenOldHeight[childIndex], this.childrenHeight[childIndex] ],
-						onAnimate: function(value){
-							value = Math.floor(value+0.5);	// avoid fractional values
-							newContents.style.height = value + "px";
-						},
-						onEnd: function(){
-							delete self._animation;
-							newContents.style.height = "auto";
-							child.resize( { w: this._width, h: self.childrenHeight[childIndex] } );
-
-						}
-					});
-				console.log("Curve from "+this.childrenOldHeight[childIndex]+" till "+this.childrenHeight[childIndex]);
-					this.childrenAnimation[childIndex].onStop = this.childrenAnimation[childIndex].onEnd;
-					this.childrenAnimation[childIndex].play();
-					this.childrenOldHeight[childIndex] = this.childrenHeight[childIndex];
-				}
+			
+			var children = this.getChildren();
+			var childIndex = children.indexOf(newWidget);
+			if ( action == "show" ) {
+//			    this.childrenOldHeight[childIndex] = 0;
+			    newWidget._wrapperWidget.containerNode.style.height = 0 + "px";
+			    this._showChild(newWidget);
+			}
+			
+			var _verticalSpace = 0;
+			var _lastPane = 0;
+			Array.forEach(children, function(child, childIndex) {
+				console.log("Range for child #"+childIndex+" is [ "+this.childrenOldHeight[childIndex]+" : "+this.childrenHeight[childIndex]+"]");
+				_verticalSpace += this.childrenOldHeight[childIndex];
+				if ( this.childrenHeight[childIndex] > 0 || child == newWidget )
+					_lastPane = child;
+				console.log("_vertspace="+_verticalSpace+", lastpane="+_lastPane);
 			}, this);
-
+			
+			var steps = 1;
+			this._animation = new fx.Animation({
+				duration: this.duration,
+//				duration: 3000,
+				curve: [ 0, steps ],
+				onAnimate: function(value) {
+					console.log("onAnimate: value="+value);
+					var usedHeight = 0;
+					Array.forEach(self.getChildren(), function(child, childIndex) {
+						if ( this.childrenHeight[childIndex] > 0 || child == newWidget ) {
+							var h = (child == _lastPane && value < steps)?(_verticalSpace - usedHeight):Math.floor( ( this.childrenOldHeight[childIndex]*(steps-value) + this.childrenHeight[childIndex]*value ) / steps + 0.5);
+							usedHeight += h;
+							console.log("On value "+value+"/"+steps+" for child #"+childIndex+" h="+h);
+							child._wrapperWidget.containerNode.style.height = h + "px";
+						}
+					}, self);
+				},
+				onEnd: function() {
+					delete self._animation;
+					if ( action == "hide" )
+						self._hideChild(newWidget);
+					self.childrenOldHeight = self.childrenHeight;
+				}
+			});
+			this._animation.onStop = this._animation.onEnd;
+			this._animation.play();
+		
 		}
 		else {
 			// NO ANIMATION
+			this.childrenHeight = this._getSize();
 			if ( action == "hide" ) {
 				console.log("no animate transition: hide child "+newWidget);
 				newWidget._wrapperWidget.set("selected", false);
