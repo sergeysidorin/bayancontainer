@@ -91,8 +91,7 @@ require(
 	    
 	    _getSize: function() {
 		// get cumulative height of all the unselected title bars
-		var totalCollapsedHeight = 0;
-		var totalOpenButtonHeight = 0;
+		var totalButtonHeight = 0;
 		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
 		var mySize = this._contentBox;
 		
@@ -101,33 +100,31 @@ require(
 		array.forEach(this.getChildren(), function(child, index, array){
 			var i = dojo.indexOf(selectedChildrenId, child.id);
 			console.log("getSize: index for "+child.id+" is "+i);
+			
+			var wrapperDomNode = child._wrapperWidget.domNode,
+				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
+				wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode),
+				wrapperContainerNode = child._wrapperWidget.containerNode,
+				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
+				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
+
+			totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+
 			if( i == -1 ){
 				console.log("getSize: collapsed child "+child);
-				totalCollapsedHeight += domGeometry.getMarginSize(child._wrapperWidget.domNode).h;
 				result.push(0);
 			}
 			else {
 				console.log("getSize: open child "+child);
-				var wrapperDomNode = child._wrapperWidget.domNode;
-				var wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode);
-				var wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode);
-				var wrapperContainerNode = child._wrapperWidget.containerNode;
-				var wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode);
-				var wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
-
-				totalOpenButtonHeight += wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
-
 				result.push(1);
-				
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
 			}
 		}, this);
 
-		var verticalSpace = mySize.h - totalCollapsedHeight - totalOpenButtonHeight;
+		var verticalSpace = mySize.h - totalButtonHeight;
 
 		var numOpen = this.selectedChildren.length;
-		console.log("getSize: total number of selected = "+numOpen+", verticalSpace="+verticalSpace+", tCH="+totalCollapsedHeight+", tOBH="+totalOpenButtonHeight);
 		for (var i=0; i<result.length; i ++ ){
 			if ( result[i] == 1 ) {
 				var h = Math.floor(verticalSpace / numOpen + 0.5);
