@@ -16,7 +16,7 @@ require(
     ],
     function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle) {
 	declare("BayanContainer", AccordionContainer, {
-	    baseClass: "dijitBayanContainer",
+	    baseClass: "dijitAccordionContainer",
 	    
 	    childrenHeight: [ ],
 	    
@@ -99,7 +99,7 @@ require(
 		
 		array.forEach(this.getChildren(), function(child, index, array){
 			var i = dojo.indexOf(selectedChildrenId, child.id);
-			console.log("getSize: index for "+child.id+" is "+i);
+//			console.log("getSize: index for "+child.id+" is "+i);
 			
 			var wrapperDomNode = child._wrapperWidget.domNode,
 				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
@@ -111,11 +111,11 @@ require(
 			totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
 
 			if( i == -1 ){
-				console.log("getSize: collapsed child "+child);
+//				console.log("getSize: collapsed child "+child);
 				result.push(0);
 			}
 			else {
-				console.log("getSize: open child "+child);
+//				console.log("getSize: open child "+child);
 				result.push(1);
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
