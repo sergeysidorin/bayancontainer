@@ -49,12 +49,14 @@ require(
 				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
 				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
 
-			totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
 
 			if( i == -1 ){
 				result.push(0);
+//				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + child._buttonWidget.getTitleHeight();
 			}
 			else {
+				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
 				result.push(1);
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
@@ -120,7 +122,7 @@ require(
 		if(has("ie") < 8)
 		    animate = false;
 
-//animate = false;
+animate = false;
 		// Recalculate height for all children. Height for hidden child = 0, for visible child > 0.
 		this.childrenHeight = this._getSize();
 
@@ -152,7 +154,7 @@ require(
 						duration: this.duration,
 						curve: [ 1, this.childrenHeight[childIndex] ],
 						onAnimate: function(value){
-							value = Math.floor(value);	// avoid fractional values
+							value = Math.floor(value+0.5);	// avoid fractional values
 							newContents.style.height = value + "px";
 						},
 						onEnd: function(){
@@ -175,7 +177,7 @@ require(
 						duration: this.duration,
 						curve: [ this.childrenOldHeight[childIndex], 1 ],
 						onAnimate: function(value){
-							value = Math.floor(value);	// avoid fractional values
+							value = Math.floor(value+0.5);	// avoid fractional values
 							newContents.style.height = value + "px";
 						},
 						onEnd: function(){
@@ -196,7 +198,7 @@ require(
 						duration: this.duration,
 						curve: [ this.childrenOldHeight[childIndex], this.childrenHeight[childIndex] ],
 						onAnimate: function(value){
-							value = Math.floor(value);	// avoid fractional values
+							value = Math.floor(value+0.5);	// avoid fractional values
 							newContents.style.height = value + "px";
 						},
 						onEnd: function(){
