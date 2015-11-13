@@ -34,6 +34,7 @@ require(
 	    
 	    _getSize: function(newWidget, action) {
 		// get cumulative height of all the (selected and unselected) title bars
+console.log("_getSize: "+newWidget+" : "+action);
 		var totalButtonHeight = 0;
 		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
 		var mySize = this._contentBox;
@@ -48,7 +49,7 @@ require(
 				wrapperContainerNode = child._wrapperWidget.containerNode,
 				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
 				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
-			result.push( (i == -1)?0:1 );
+			result.push( (i == -1 || ( action=="show" && child==newWidget ))?0:1 );
 			if ( i == -1 && !(action == "show" && child==newWidget) ){
 				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + child._buttonWidget.getTitleHeight();
 			}
@@ -61,15 +62,19 @@ require(
 
 		var verticalSpace = mySize.h - totalButtonHeight;
 
-		var numOpen = this.selectedChildren.length;
+console.log("_getSize: selectedCHildren "+this.selectedChildren);
+		var numOpen = this.selectedChildren.length - (action=="show")?1:0;
+console.log("_getSize: numopen = "+numOpen);
 		for (var i=0; i<result.length; i ++ ){
 			if ( result[i] == 1 ) {
+				
 				var h = Math.floor(verticalSpace / numOpen + 0.5);
 				result[i] = h;
 				verticalSpace -= h;
 				numOpen --;
 			}
 		}
+		console.log("_getSize: return "+result);
 		return result;
 	    },
 	    
