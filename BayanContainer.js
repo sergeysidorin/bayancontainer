@@ -80,11 +80,16 @@ require(
 	
 	    
 	    addChild: function(child, insertIndex) {
-		console.log("adding child "+child+" with staticHeight="+child.staticHeight);
+//		console.log("adding child "+child+" with staticHeight="+child.staticHeight);
 		if(!this._childrenSelected.length){
 		    this._childrenSelected = [ child ];
 		}
-		return this.inherited(arguments);
+		var r = this.inherited(arguments);
+//		if ( child.staticHeight )
+//			console.log("addChild: staticHeight detected!");
+////			console.log("addChild: staticHeight pane detected, height = "+domGeometry.getMarginSize(child._wrapperWidget.domNode).h);
+		
+		return r;
 	    },
 	
 	    
@@ -155,7 +160,8 @@ require(
 							var h = (child == _lastPane && value < 1) ? (_verticalSpace - usedHeight) 
 								: this._childrenOldHeight[childIndex] + Math.floor( (this._childrenHeight[childIndex] - this._childrenOldHeight[childIndex])*value + 0.5);
 							usedHeight += h;
-							child.resize( { w: this._width, h: h } );
+							if ( child.staticHeight != true )
+								child.resize( { w: this._width, h: h } );
 						}
 					}, self);
 				},
@@ -186,9 +192,14 @@ require(
 
 			// Resize all children
 			array.forEach(this.getChildren(), function(child, childIndex) {
-				var h = this._childrenHeight[childIndex];
-				if ( h )
-					child.resize( { w: this._width, h: h } );
+				if ( child.staticHeight != true ) {
+					var h = this._childrenHeight[childIndex];
+					if ( h )
+						child.resize( { w: this._width, h: h } );
+				}
+				else {
+					console.log("staticHeight pane detected, height = "+domGeometry.getMarginSize(child._wrapperWidget.containerNode).h);
+				}
 			}, this);
 			
 			this._childrenOldHeight = this._childrenHeight;
