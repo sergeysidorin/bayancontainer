@@ -13,13 +13,20 @@
 
 
 
+
 <div style='color:blue;'>BayanContainer</div>
 <div id=markupB style='width:600px; height:400px; border:solid blue 1px;'></div>
 
 <div>&nbsp;</div>
 
+<div style='color:red;'>BayanContainer again</div>
+<div id=markupB2 style='width:600px; height:400px; border:solid red 1px;'></div>
+
+<div>&nbsp;</div>
+
 <div style='color:green;'>AccordionContainer</div>
 <div id=markupA style='width:600px; height:400px; border:solid green 1px;'></div>
+
 
 <script type="text/javascript" src=BayanContainer.js></script>
 
@@ -36,15 +43,16 @@ require(
 	
 	bC.addChild(new ContentPane({
 	    title:'Pane #1',
-	    content:'Hello, world!'
+	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #2',
-	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para"
+	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 ',
-	    content:'Hello, world!'
+	    content:'Hello, world!',
+	    staticHeight: true,
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #4',
@@ -71,8 +79,36 @@ require(
 	    content:'Hello, world!'
 	    }));
 	aC.startup();
+
+/*
+	var bC2 = new BayanContainer({style:'height:400px'}, 'markupB2');
+	
+	bC2.addChild(new ContentPane({
+	    title:'BC2 Pane #1',
+	    content:"<h3>BC2</h3>h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
+	    }));
+	bC2.addChild(new ContentPane({
+	    title:'BC2 Pane #2',
+	    content:"<h3>BC2</h3>h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
+	    }));
+	bC2.addChild(new ContentPane({
+	    title:'BC2 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 ',
+	    content:'<h3>BC2</h3>Hello, world!'
+	    }));
+	bC2.addChild(new ContentPane({
+	    title:'BC2 Pane #4',
+	    content:'<h3>BC2</h3>Hello, world!'
+	    }));
+	bC2.startup();
+*/
+
     }
+
+
 );
+
+
+
 
 </script>
 

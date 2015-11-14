@@ -16,14 +16,13 @@ require(
     ],
     function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle, fx) {
 	declare("BayanContainer", AccordionContainer, {
+	    staticHeight: false,
+
 	    baseClass: "dijitAccordionContainer",
 	    
-	    childrenHeight: [ ],
-	    childrenOldHeight: [ ],
-	    
-	    selectedChildren: [ ],
-	    
-	    childrenAnimation: [ ],
+	    _childrenHeight: [ ],
+	    _childrenOldHeight: [ ],
+	    _childrenSelected: [ ],
 	    
 	    constructor: function() {
 		console.log("BayanContainer costructor running");
@@ -34,7 +33,7 @@ require(
 	    _getSize: function(newWidget, action) {
 		// get cumulative height of all the (selected and unselected) title bars
 		var totalButtonHeight = 0;
-		var selectedChildrenId = array.map(this.selectedChildren, function(item){ return item.id; });
+		var selectedChildrenId = array.map(this._childrenSelected, function(item){ return item.id; });
 		var mySize = this._contentBox;
 		
 		var result = [];
@@ -60,7 +59,7 @@ require(
 
 		var verticalSpace = mySize.h - totalButtonHeight;
 
-		var numOpen = this.selectedChildren.length ;
+		var numOpen = this._childrenSelected.length ;
 		if ( action == "show" )
 			numOpen --;
 		for (var i=0; i<result.length; i ++ ){
@@ -81,8 +80,9 @@ require(
 	
 	    
 	    addChild: function(child, insertIndex) {
-		if(!this.selectedChildren.length){
-		    this.selectedChildren = [ child ];
+		console.log("adding child "+child+" with staticHeight="+child.staticHeight);
+		if(!this._childrenSelected.length){
+		    this._childrenSelected = [ child ];
 		}
 		return this.inherited(arguments);
 	    },
@@ -90,19 +90,19 @@ require(
 	    
 	    selectChild: function(newWidget, animate) {
 		var childIndex = dojo.indexOf(this.getChildren(), newWidget);
-		var selectedIndex = dojo.indexOf(this.selectedChildren, newWidget);
+		var selectedIndex = dojo.indexOf(this._childrenSelected, newWidget);
 		var action = "";
 		if ( selectedIndex == -1 ) {
-		    this.selectedChildren.push(newWidget);
+		    this._childrenSelected.push(newWidget);
 		    topic.publish(this.id + "-selectChild", newWidget);	// publish
 		    action = "show";
 		    this._transition(newWidget, action, animate);
 		}
 		else {
-		    if ( this.selectedChildren.length == 1 ) {
+		    if ( this._childrenSelected.length == 1 ) {
 		    }
 		    else {
-			this.selectedChildren.splice(selectedIndex, 1);
+			this._childrenSelected.splice(selectedIndex, 1);
 			action = "hide";
 			this._transition(newWidget, action, animate);
 		    }
@@ -126,15 +126,13 @@ require(
 				delete this._animation;
 			}
 			if ( action == "show" )
-				this.childrenOldHeight = this._getSize(newWidget, action);
-			this.childrenHeight = this._getSize();
+				this._childrenOldHeight = this._getSize(newWidget, action);
+			this._childrenHeight = this._getSize();
 			
 			var self = this;
 			
 			var children = this.getChildren();
-			var childIndex = children.indexOf(newWidget);
 			if ( action == "show" ) {
-			    newWidget._wrapperWidget.containerNode.style.height = 0 + "px";
 			    newWidget._wrapperWidget.set("selected", true);
 			    var d = this._showChild(newWidget);
 			}
@@ -142,8 +140,8 @@ require(
 			var _verticalSpace = 0;
 			var _lastPane = 0;
 			array.forEach(children, function(child, childIndex) {
-				_verticalSpace += this.childrenOldHeight[childIndex];
-				if ( this.childrenHeight[childIndex] > 0 || child == newWidget )
+				_verticalSpace += this._childrenOldHeight[childIndex];
+				if ( this._childrenHeight[childIndex] > 0 || child == newWidget )
 					_lastPane = child;
 			}, this);
 			
@@ -153,11 +151,11 @@ require(
 				onAnimate: function(value) {
 					var usedHeight = 0;
 					array.forEach(children, function(child, childIndex) {
-						if ( this.childrenHeight[childIndex] > 0 || child == newWidget ) {
+						if ( this._childrenHeight[childIndex] > 0 || child == newWidget ) {
 							var h = (child == _lastPane && value < 1) ? (_verticalSpace - usedHeight) 
-								: this.childrenOldHeight[childIndex] + Math.floor( (this.childrenHeight[childIndex] - this.childrenOldHeight[childIndex])*value + 0.5);
+								: this._childrenOldHeight[childIndex] + Math.floor( (this._childrenHeight[childIndex] - this._childrenOldHeight[childIndex])*value + 0.5);
 							usedHeight += h;
-							child._wrapperWidget.containerNode.style.height = h + "px";
+							child.resize( { w: this._width, h: h } );
 						}
 					}, self);
 				},
@@ -167,7 +165,7 @@ require(
 						self._hideChild(newWidget);
 						newWidget._wrapperWidget.set("selected", false);
 					}
-					self.childrenOldHeight = self.childrenHeight;
+					self._childrenOldHeight = self._childrenHeight;
 				}
 			});
 			this._animation.onStop = this._animation.onEnd;
@@ -176,7 +174,7 @@ require(
 		}
 		else {
 			// NO ANIMATION
-			this.childrenHeight = this._getSize();
+			this._childrenHeight = this._getSize();
 			if ( action == "hide" ) {
 				newWidget._wrapperWidget.set("selected", false);
 				this._hideChild(newWidget);
@@ -188,12 +186,12 @@ require(
 
 			// Resize all children
 			array.forEach(this.getChildren(), function(child, childIndex) {
-				var h = this.childrenHeight[childIndex];
+				var h = this._childrenHeight[childIndex];
 				if ( h )
 					child.resize( { w: this._width, h: h } );
 			}, this);
 			
-			this.childrenOldHeight = this.childrenHeight;
+			this._childrenOldHeight = this._childrenHeight;
 		}
 		return d;	// If child has an href, promise that fires when the widget has finished loading
 
