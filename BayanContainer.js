@@ -16,50 +16,65 @@ require(
     ],
     function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle, fx) {
 	declare("BayanContainer", AccordionContainer, {
-	    staticHeight: false,
+//	    staticHeight: false,
 
 	    baseClass: "dijitAccordionContainer",
 	    
 	    _childrenHeight: [ ],
 	    _childrenOldHeight: [ ],
-	    _childrenSelected: [ ],
+//	    _childrenSelected: [ ],
+	    _childrenSelectedDynamicCount: 0,
 	    
 	    constructor: function() {
 		console.log("BayanContainer costructor running");
 		this._width = 0;
+		_childrenSelectedDynamicCount = 0;
 	    },
 	    
 	    
 	    _getSize: function(newWidget, action) {
 		// get cumulative height of all the (selected and unselected) title bars
 		var totalButtonHeight = 0;
-		var selectedChildrenId = array.map(this._childrenSelected, function(item){ return item.id; });
+//		var selectedChildrenId = array.map(this._childrenSelected, function(item){ return item.id; });
+//console.log("this._childrenSelected="+this._childrenSelected);
+//console.log("selectedchildrenid="+selectedChildrenId);
 		var mySize = this._contentBox;
 		
 		var result = [];
+		var num_dynamic = 0;
 		
 		array.forEach(this.getChildren(), function(child, index, array){
-			var i = dojo.indexOf(selectedChildrenId, child.id);
+console.log("Child is selected? "+child.selected);
+//			var i = dojo.indexOf(selectedChildrenId, child.id);
+//			var i = dojo.indexOf(this.childrenSelected, child);
+			console.log("_getSize: index = "+i+", child="+child);
 			var wrapperDomNode = child._wrapperWidget.domNode,
 				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
 				wrapperDomNodePadBorder = domGeometry.getPadBorderExtents(wrapperDomNode),
 				wrapperContainerNode = child._wrapperWidget.containerNode,
 				wrapperContainerNodeMargin = domGeometry.getMarginExtents(wrapperContainerNode),
 				wrapperContainerNodePadBorder = domGeometry.getPadBorderExtents(wrapperContainerNode);
-			result.push( (i == -1 || ( action=="show" && child==newWidget ))?0:1 );
-			if ( i == -1 && !(action == "show" && child==newWidget) ){
+			result.push( (child.selected != true || ( action=="show" && child==newWidget ))?0:(child.staticHeight?-1:1) );
+			if ( child.selected != true && !(action == "show" && child==newWidget) ){
 				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + child._buttonWidget.getTitleHeight();
 			}
 			else {
-				totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+				if ( child.staticHeight ) {
+					totalButtonHeight += domGeometry.getMarginBox(child._wrapperWidget.domNode).h;
+				}
+				else {
+					totalButtonHeight +=  wrapperDomNodeMargin.h + wrapperDomNodePadBorder.h + wrapperContainerNodeMargin.h + wrapperContainerNodePadBorder.h + child._buttonWidget.getTitleHeight();
+					num_dynamic ++;
+				}
 				if ( this._width == 0 )
 					this._width = mySize.w - wrapperDomNodeMargin.w - wrapperDomNodePadBorder.w - wrapperContainerNodeMargin.w - wrapperContainerNodePadBorder.w;
 			}
 		}, this);
-
+		
 		var verticalSpace = mySize.h - totalButtonHeight;
-
-		var numOpen = this._childrenSelected.length ;
+		
+		var numOpen = num_dynamic;
+console.log("NumOpen="+numOpen);
 		if ( action == "show" )
 			numOpen --;
 		for (var i=0; i<result.length; i ++ ){
@@ -80,34 +95,45 @@ require(
 	
 	    
 	    addChild: function(child, insertIndex) {
+//		console.log("adding child, index="+insertIndex);
 //		console.log("adding child "+child+" with staticHeight="+child.staticHeight);
-		if(!this._childrenSelected.length){
-		    this._childrenSelected = [ child ];
+		if ( child.staticHeight ) {
+//			if ( this._childrenSelected.length == 0 ) {
+			if ( this.getChildren().length == 0 ) {
+//				this._childrenSelected.push(child);
+				console.log("push "+child);
+			}
+		}
+		else {
+			if ( this._childrenSelectedDynamicCount == 0 ) {
+//				this._childrenSelected.push(child);
+				this._childrenSelectedDynamicCount ++;
+				console.log("push "+child);
+			}
 		}
 		var r = this.inherited(arguments);
-//		if ( child.staticHeight )
-//			console.log("addChild: staticHeight detected!");
-////			console.log("addChild: staticHeight pane detected, height = "+domGeometry.getMarginSize(child._wrapperWidget.domNode).h);
-		
 		return r;
 	    },
 	
 	    
 	    selectChild: function(newWidget, animate) {
 		var childIndex = dojo.indexOf(this.getChildren(), newWidget);
-		var selectedIndex = dojo.indexOf(this._childrenSelected, newWidget);
+//		var selectedIndex = dojo.indexOf(this._childrenSelected, newWidget);
 		var action = "";
-		if ( selectedIndex == -1 ) {
-		    this._childrenSelected.push(newWidget);
+//		if ( selectedIndex == -1 ) {
+		if ( newWidget.selected != true ) {
+//		    this._childrenSelected.push(newWidget);
+		    if ( newWidget.staticHeight != true )
+			this._childrenSelectedDynamicCount ++;
 		    topic.publish(this.id + "-selectChild", newWidget);	// publish
 		    action = "show";
 		    this._transition(newWidget, action, animate);
 		}
 		else {
-		    if ( this._childrenSelected.length == 1 ) {
-		    }
-		    else {
-			this._childrenSelected.splice(selectedIndex, 1);
+		    if ( this._childrenSelectedDynamicCount > 1 || newWidget.staticHeight == true ) {
+//			this._childrenSelected.splice(selectedIndex, 1);
+			if ( newWidget.staticHeight != true )
+				this._childrenSelectedDynamicCount --;
 			action = "hide";
 			this._transition(newWidget, action, animate);
 		    }
@@ -121,7 +147,7 @@ require(
 		if(has("ie") < 8)
 		    animate = false;
 
-//animate = false;
+animate = false;
 
 		if ( animate ) {
 			// USE ANIMATION
@@ -180,7 +206,6 @@ require(
 		}
 		else {
 			// NO ANIMATION
-			this._childrenHeight = this._getSize();
 			if ( action == "hide" ) {
 				newWidget._wrapperWidget.set("selected", false);
 				this._hideChild(newWidget);
@@ -189,6 +214,8 @@ require(
 				newWidget._wrapperWidget.set("selected", true);
 				var d = this._showChild(newWidget);
 			}
+
+			this._childrenHeight = this._getSize();
 
 			// Resize all children
 			array.forEach(this.getChildren(), function(child, childIndex) {
