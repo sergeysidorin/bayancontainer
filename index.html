@@ -43,20 +43,22 @@ require(
 	
 	bC.addChild(new ContentPane({
 	    title:'Pane #1',
-	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
+	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #2',
-	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line"
+	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 ',
 	    content:'Hello, world! <img src=/icons/world2.png height=100 border=1>',
 	    staticHeight: true,
+	    selected:true,
 	    }));
 	bC.addChild(new ContentPane({
 	    title:'Pane #4',
-	    content:'Hello, world!'
+	    content:'Hello, world!',
+	    selected:true,
 	    }));
 	bC.startup();
 
@@ -76,7 +78,8 @@ require(
 	    }));
 	aC.addChild(new ContentPane({
 	    title:'Pane #4',
-	    content:'Hello, world!'
+	    content:'Hello, world!',
+	    selected: true,
 	    }));
 	aC.startup();
 

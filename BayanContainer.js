@@ -16,28 +16,19 @@ require(
     ],
     function(declare, has, array, AccordionContainer, ContentPane, domReady, _WidgetBase, domGeometry, json, topic, domAttr, domStyle, fx) {
 	declare("BayanContainer", AccordionContainer, {
-//	    staticHeight: false,
-
 	    baseClass: "dijitAccordionContainer",
 	    
 	    _childrenHeight: [ ],
 	    _childrenOldHeight: [ ],
-//	    _childrenSelected: [ ],
-	    _childrenSelectedDynamicCount: 0,
 	    
 	    constructor: function() {
-		console.log("BayanContainer costructor running");
 		this._width = 0;
-		_childrenSelectedDynamicCount = 0;
 	    },
 	    
 	    
 	    _getSize: function(newWidget, action) {
 		// get cumulative height of all the (selected and unselected) title bars
 		var totalButtonHeight = 0;
-//		var selectedChildrenId = array.map(this._childrenSelected, function(item){ return item.id; });
-//console.log("this._childrenSelected="+this._childrenSelected);
-//console.log("selectedchildrenid="+selectedChildrenId);
 		var mySize = this._contentBox;
 		
 		var result = [];
@@ -45,8 +36,6 @@ require(
 		
 		array.forEach(this.getChildren(), function(child, index, array){
 console.log("Child is selected? "+child.selected);
-//			var i = dojo.indexOf(selectedChildrenId, child.id);
-//			var i = dojo.indexOf(this.childrenSelected, child);
 			console.log("_getSize: index = "+i+", child="+child);
 			var wrapperDomNode = child._wrapperWidget.domNode,
 				wrapperDomNodeMargin = domGeometry.getMarginExtents(wrapperDomNode),
@@ -89,57 +78,31 @@ console.log("NumOpen="+numOpen);
 	    },
 	    
 	    
-	    layout: function() {
-		this._transition(this.getChildren()[0], "show", false);
-	    },
-	
-	    
-	    addChild: function(child, insertIndex) {
-//		console.log("adding child, index="+insertIndex);
-//		console.log("adding child "+child+" with staticHeight="+child.staticHeight);
-		if ( child.staticHeight ) {
-//			if ( this._childrenSelected.length == 0 ) {
-			if ( this.getChildren().length == 0 ) {
-//				this._childrenSelected.push(child);
-				console.log("push "+child);
-			}
-		}
-		else {
-			if ( this._childrenSelectedDynamicCount == 0 ) {
-//				this._childrenSelected.push(child);
-				this._childrenSelectedDynamicCount ++;
-				console.log("push "+child);
-			}
-		}
-		var r = this.inherited(arguments);
-		return r;
-	    },
-	
-	    
 	    selectChild: function(newWidget, animate) {
-		var childIndex = dojo.indexOf(this.getChildren(), newWidget);
-//		var selectedIndex = dojo.indexOf(this._childrenSelected, newWidget);
 		var action = "";
-//		if ( selectedIndex == -1 ) {
 		if ( newWidget.selected != true ) {
-//		    this._childrenSelected.push(newWidget);
-		    if ( newWidget.staticHeight != true )
-			this._childrenSelectedDynamicCount ++;
 		    topic.publish(this.id + "-selectChild", newWidget);	// publish
 		    action = "show";
 		    this._transition(newWidget, action, animate);
 		}
 		else {
-		    if ( this._childrenSelectedDynamicCount > 1 || newWidget.staticHeight == true ) {
-//			this._childrenSelected.splice(selectedIndex, 1);
-			if ( newWidget.staticHeight != true )
-				this._childrenSelectedDynamicCount --;
+		    var dynamicCount = array.filter(this.getChildren(), function(child) { return child.selected && !child.staticHeight; }).length;
+		    if ( dynamicCount > 1 || newWidget.staticHeight == true ) {
 			action = "hide";
 			this._transition(newWidget, action, animate);
 		    }
 		}
 	    },
-
+	    
+	    
+		layout: function() {
+			array.forEach(this.getChildren(), function(child) {
+				if ( child.selected )
+					this._transition(child, "show", false);
+			}, this);
+		},
+		
+		
 	    _transition: function(newWidget, action, animate){
 		if ( action == "" )
 		    return;
@@ -234,6 +197,27 @@ animate = false;
 		return d;	// If child has an href, promise that fires when the widget has finished loading
 
 	    },
+	    
+	    
+	    startup: function () {
+		var dynamicCount = 0;
+		array.forEach(this.getChildren(), function(child) {
+			if ( !child.staticHeight && child.selected )
+				dynamicCount ++;
+//			if ( child.selected )
+//				child._wrapperWidget.set("selected", true);
+
+		});
+		if ( dynamicCount == 0 ) {
+			array.forEach(this.getChildren(), function(child) {
+				if ( !child.staticHeight && !dynamicCount )
+					child.selected = true, dynamicCount++, child._wrapperWidget.set("selected", true);
+			}, this);
+		}
+		r = this.inherited(arguments);
+		return r;
+	    }
+
 
 	});
     }
