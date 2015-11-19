@@ -42,24 +42,28 @@ require(
 	var bC = new BayanContainer({style:'height:400px'}, 'markupB');
 	
 	bC.addChild(new ContentPane({
-	    title:'Pane #1',
-	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
-	    }));
+		title:'Pane #1',
+		content:"<p>This pane has no tag 'selected', but is selected on container start because there is no pre-selected dynamic pane.<p>"
+			+"<p>Also this pane is very tall. You can scroll it.</p>"
+			+"<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
+		}));
 	bC.addChild(new ContentPane({
-	    title:'Pane #2',
-	    content:"h1<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
-	    }));
+		title:'Pane #2',
+		content:"<p>This is another dynamic pane.</p>"
+			+"<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>para para para<br>last line",
+		}));
 	bC.addChild(new ContentPane({
-	    title:'Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 ',
-	    content:'Hello, world! <img src=/icons/world2.png height=100 border=1>',
-	    staticHeight: true,
-	    selected:true,
-	    }));
+		title:"Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 Pane #3 ",
+		content:"<img src=/icons/world2.png height=100 border=1 align=right> This is static pane with picture. Picture height is 100px. Content height is 124px. Also this pane has very long title.",
+		staticHeight: true,
+		}));
 	bC.addChild(new ContentPane({
-	    title:'Pane #4',
-	    content:'Hello, world!',
-	    selected:true,
-	    }));
+		title:'Pane #4',
+		content:"<h3>Hello, world!</h3><p>Another static pane.</p>",
+		selected:true,
+		staticHeight: true,
+		style: "heigth:50px;"
+		}));
 	bC.startup();
 
 	var aC = new AccordionContainer({style:'height:400px'}, 'markupA');
@@ -83,7 +87,6 @@ require(
 	    }));
 	aC.startup();
 
-/*
 	var bC2 = new BayanContainer({style:'height:400px'}, 'markupB2');
 	
 	bC2.addChild(new ContentPane({
@@ -103,7 +106,6 @@ require(
 	    content:'<h3>BC2</h3>Hello, world!'
 	    }));
 	bC2.startup();
-*/
 
     }
 
